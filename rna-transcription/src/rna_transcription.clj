@@ -1,33 +1,31 @@
 (ns rna-transcription)
 
-(defn rna-translator [coll]
-  (loop [temp coll
-         acc '[]]
-    (if (= empty? temp)
-      acc
-      (recur
-        (rest temp)
-        (concat
-          (case (first temp)
-            \G \C
-            \C \G
-            \T \A
-            \A \U
-            "BRRT") 
-          acc)))))
 
-(rna-translator \G)
+
+(defn trans-each
+  [char]
+  (let [each (case char
+               \G \C
+               \C \G
+               \T \A
+               \A \U
+               "NA")]
+    (if (= each "NA")
+      (throw (AssertionError. "Unknown input."))
+      each)))
 
 (defn to-rna [string] ;; <- arglist goes here
-  (reduce))
-  ;; your code goes here
-(defn test-1
-  [coll]
-  (let [temp coll]
-    (case (first temp)
-          \G \C
-          \C \G
-          \T \A
-          \A \U)))
+  (let [coll (seq string)]
+    (loop [left coll
+           acc ""]
+      (if (empty? left)
+        acc
+        (recur (rest left)
+               (str acc (trans-each (first left))))))))
 
-(test-1 '(\T))
+
+  ;; your code goes here
+
+; (to-rna "X")
+;
+; (time (test-1 '(\T)))
