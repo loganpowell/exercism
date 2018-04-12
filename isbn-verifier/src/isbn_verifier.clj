@@ -20,15 +20,25 @@
 ; get `mod` of `total`/11
 ; if mod = 0 true | else false
 
+; first attempt
+;
+; (defn str-2-seq [str]
+;   (let [chars (filter #(not= \- %) (seq str))]
+;     (if (= 10 (count chars))
+;         (let [digits (first (split-at 9 chars))
+;               checkr (second (split-at 9 chars))]
+;           ; (println "digits: " digits " checkr: " checkr))
+;           [digits checkr])
+;         "No bueno")))
+
+
+; further refactoring
+; You could use `(assert ...)` in `str-2-seq` instead of the `if` to perhaps simplify things there (now that you're catching assertions):
 
 (defn str-2-seq [str]
   (let [chars (filter #(not= \- %) (seq str))]
-    (if (= 10 (count chars))
-        (let [digits (first (split-at 9 chars))
-              checkr (second (split-at 9 chars))]
-          ; (println "digits: " digits " checkr: " checkr))
-          [digits checkr])
-        "No bueno")))
+    (assert (= 10 (count chars)))
+    (split-at 9 chars)))
 
 ; (str-2-seq "3-598-21507-0")
 
@@ -83,15 +93,29 @@
 ; You have a cascade of three `let`s that could all just be one.)
 ; Also `(if condition true false)` is the same as just `condition`.
 
+; (defn isbn? [isbn]
+;   (try
+;     (let [[digits checkr] (str-2-seq isbn)
+;           nine (first-9 digits)
+;           chkr (apply hdl-check checkr)
+;           sum (+ nine chkr)]
+;       (and (= (mod sum 11) 0)
+;            (> 100000 sum)))
+;     (catch Throwable _ false)))
+
+; refactoring even further:
+; Then another little trick you can do in `isbn?` is to further destructure `checkr` since you know it should be a sequence of one element
+
 (defn isbn? [isbn]
   (try
-    (let [[digits checkr] (str-2-seq isbn)
+    (let [[digits [checkr]] (str-2-seq isbn)
           nine (first-9 digits)
-          chkr (apply hdl-check checkr)
+          chkr (hdl-check checkr) ; checkr is a Character now -- no need for apply
           sum (+ nine chkr)]
       (and (= (mod sum 11) 0)
            (> 100000 sum)))
     (catch Throwable _ false)))
+
 
 ; also see `some->>`: https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/some-%3E%3E
 ; `(boolean (some->> input (check-1) (check-2) ... (check-n)))`
