@@ -20,54 +20,90 @@
 ; get `mod` of `total`/11
 ; if mod = 0 true | else false
 
-(defn first-9 [seq]
-  (if
-    (every? #(Character/isDigit %) seq)
-    (let [vects (map vector (reverse (range 2 11)) (map #(Character/digit % 10) seq))]
-      (let [products (map #(apply * %) vects)]
-        (apply + products)))
-    1))
-
-; help 1)
-
-(time (first-9 '(\1 \2 \3 \4 \5 \6 \7 \8 \9)))
 
 (defn str-2-seq [str]
   (let [chars (filter #(not= \- %) (seq str))]
-    chars
     (if (= 10 (count chars))
         (let [digits (first (split-at 9 chars))
               checkr (second (split-at 9 chars))]
           ; (println "digits: " digits " checkr: " checkr))
           [digits checkr])
-        '[(\1 \1 \1 \1 \1 \1 \1 \1 \0) (\1)])))
+        "No bueno")))
 
 ; (str-2-seq "3-598-21507-0")
+
+; original:
+; (defn first-9 [seq]
+;   (if
+;     (every? #(Character/isDigit %) seq)
+;     (let [vects (map vector (reverse (range 2 11)) (map #(Character/digit % 10) seq))]
+;       (let [products (map #(apply * %) vects)]
+;         (apply + products)))
+;     1))
+
+; refactor based on clojurians exchange:
+; HERE => https://clojurians.slack.com/archives/C053AK3F9/p1523483259000369
+; use `range`s 'step' function
+; use `map`s ability to sort of "zip together" multiple sequences and apply a function to the zippered sets (will terminate with the shortest sequence)
+; to throw an AssertionError, use `{:pre [...]}
+
+(defn first-9 [digits]
+  {:pre [(= 9 (count digits)) (every? #(Character/isDigit %) digits)]}
+  (reduce + (map * (range 10 1 -1) (map #(Character/digit % 10) digits))))
+
+; (time (first-9 '(\1 \2 \3 \4 \5 \6 \7 \8 \9)))
+
 
 (defn hdl-check [char]
   (cond
     (= \X char) 10
     (Character/isDigit char) (Character/digit char 10)
-    :else 1000000))
+    :else "Bad baby"))
 
 
 ; (hdl-check \2)
 
+; original:
+; (defn isbn? [isbn]
+;   (let [digits (first (str-2-seq isbn))
+;         checkr (second (str-2-seq isbn))]
+;     ; (println "digits: " digits " checkr: " checkr)
+;     (let [nine (first-9 digits)
+;           chkr (apply hdl-check checkr)]
+;       ; (println "nine: " nine " chkr: " chkr)
+;       (let [sum (+ nine chkr)]
+;         (if (and (= (mod sum 11) 0)
+;                  (> 100000 sum))
+;             true
+;             false)))))
+
+; refactor based on clojurians exchange:
+; use a `try catch` at the top level, not at the sub assemblies to bubble up a true false
+; use destructuring to avoid calling `str-2-seq` twice:
+; You have a cascade of three `let`s that could all just be one.)
+; Also `(if condition true false)` is the same as just `condition`.
+
 (defn isbn? [isbn]
-  (let [digits (first (str-2-seq isbn))
-        checkr (second (str-2-seq isbn))]
-    ; (println "digits: " digits " checkr: " checkr)
-    (let [nine (first-9 digits)
-          chkr (apply hdl-check checkr)]
-      ; (println "nine: " nine " chkr: " chkr)
-      (let [sum (+ nine chkr)]
-        (if (and (= (mod sum 11) 0)
-                 (> 100000 sum))
-            true
-            false)))))
+  (try
+    (let [[digits checkr] (str-2-seq isbn)
+          nine (first-9 digits)
+          chkr (apply hdl-check checkr)
+          sum (+ nine chkr)]
+      (and (= (mod sum 11) 0)
+           (> 100000 sum)))
+    (catch Throwable _ false)))
+
+; also see `some->>`: https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/some-%3E%3E
+; `(boolean (some->> input (check-1) (check-2) ... (check-n)))`
+;     where each check function returns either a map of bindings
+;     (including ones created by previous steps), or nil
+;     (to indicate some condition wasn't met and it failed)
+;     `boolean` turns `nil` into `false`
 
 
 ; (isbn? "3-598-21507")
+
+
 ; notes
 ; if the value is wrapped in a '() use `apply` to operate on it
 ; else you can operate on it directly.
