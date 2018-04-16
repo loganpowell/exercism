@@ -24,6 +24,8 @@
     (map #(clojure.string/lower-case %))
     (remove #(or (= " " %) (= "  " %))))) ; punting on double space failures
 
+; try out debugger transducer from: https://labs.uswitch.com/transducers-from-the-ground-up-the-practice/
+
 (defn str->words [string]
   (let [chars (seq string)] ; convert to coll for transducers
     (transduce chars->words conj '[] chars)))
